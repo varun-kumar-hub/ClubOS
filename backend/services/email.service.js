@@ -27,13 +27,28 @@ const sendEmail = async ({ to, subject, html }) => {
 const sendRegistrationConfirmation = async (participant, event) => {
   return sendEmail({
     to: participant.email,
-    subject: `Registration Confirmed - ${event.name}`,
+    subject: `Registration Approved - ${event.name}`,
     html: `
-      <h2>Registration Confirmed!</h2>
+      <h2>Registration Approved!</h2>
       <p>Hi ${participant.name},</p>
-      <p>You have been registered for <strong>${event.name}</strong>.</p>
+      <p>Your registration for <strong>${event.name}</strong> has been successfully approved.</p>
       <p><strong>Date:</strong> ${event.date}</p>
       <p><strong>Venue:</strong> ${event.venue}</p>
+      <p>Your ticket is available in your student dashboard.</p>
+    `
+  });
+};
+
+const sendRegistrationRejected = async (emailData, event, reason) => {
+  return sendEmail({
+    to: emailData.email,
+    subject: `Registration Update - ${event.name}`,
+    html: `
+      <h2>Registration Notice</h2>
+      <p>Hi ${emailData.name},</p>
+      <p>We're sorry, but your registration for <strong>${event.name}</strong> could not be completed.</p>
+      <p><strong>Reason:</strong> ${reason}</p>
+      <p>Thank you for your interest, and we hope to see you at future events!</p>
     `
   });
 };
@@ -51,4 +66,9 @@ const sendTeamCreatedEmail = async (leader, team, event) => {
   });
 };
 
-module.exports = { sendEmail, sendRegistrationConfirmation, sendTeamCreatedEmail };
+module.exports = { 
+  sendEmail, 
+  sendRegistrationConfirmation, 
+  sendTeamCreatedEmail,
+  sendRegistrationRejected 
+};

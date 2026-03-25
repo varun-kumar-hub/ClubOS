@@ -3,7 +3,7 @@ const eventModel = require('../event/event.model');
 const participantModel = require('../participant/participant.model');
 const generateTeamCode = require('../../utils/generateTeamCode');
 const { validateRequired } = require('../../utils/validators');
-const { sendTeamCreatedEmail } = require('../../services/email.service');
+const { sendTeamCreatedEmail, sendRegistrationRejected } = require('../../services/email.service');
 
 const normalizeLimit = (value) => {
   const parsed = Number(value);
@@ -41,6 +41,9 @@ const teamService = {
     if (maxTeams) {
       const teamCount = await teamModel.countByEventId(eventId);
       if (teamCount >= maxTeams) {
+        sendRegistrationRejected({ name: leader.name, email: leader.email }, event, 'Event has reached maximum team capacity').catch(err => 
+          console.error('Rejection email send failed:', err.message)
+        );
         throw Object.assign(new Error('Maximum teams limit reached'), { statusCode: 400 });
       }
     }

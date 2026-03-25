@@ -21,6 +21,7 @@ export default function EventDetailsPage() {
   const [currentRegistration, setCurrentRegistration] = useState(null);
   const [teamDetails, setTeamDetails] = useState(null);
   const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const fetchPageData = async () => {
@@ -87,6 +88,25 @@ export default function EventDetailsPage() {
   const deadline = new Date(event.registration_deadline);
   const isClosed = now > deadline || event.status === 'REGISTRATION_CLOSED' || event.status === 'COMPLETED';
   const hasExistingRegistration = Boolean(currentRegistration);
+
+  const handleDownloadTicket = async () => {
+    if (!currentRegistration) return;
+    setIsDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const element = document.getElementById('ticket-card');
+      if (!element) return;
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `ticket-${event.name.replace(/\\s+/g, '-').toLowerCase()}-${currentRegistration.id.slice(0, 8)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Failed to download ticket:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_420px]">
@@ -156,105 +176,64 @@ export default function EventDetailsPage() {
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900" />
           </div>
         ) : hasExistingRegistration ? (
-          <div className="space-y-5 p-6 sm:p-7">
-            <div className="status-success">
-              You are already registered for this event. Team registration actions are locked for this account until this registration is removed.
+          <div className="flex flex-col h-full">
+            <div className="border-b border-border bg-slate-50 p-5 hidden lg:block">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground text-center">Your Event Ticket</p>
             </div>
-            {isTeam && currentRegistration?.team ? (
-              <div className="surface-panel-muted p-5">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Your Team</p>
-                <p className="mt-3 text-xl font-black text-foreground">{currentRegistration.team.name}</p>
-                <p className="mt-2 text-sm text-secondary">Team Code: {currentRegistration.team.code}</p>
-                <p className="mt-2 text-sm text-secondary">
-                  Status: {currentRegistration.team.leader_id === currentRegistration.id ? 'Leader' : 'Member'}
-                </p>
-                {teamDetails?.participants?.length ? (
-                  <div className="mt-4 space-y-2 rounded-2xl border border-slate-200 bg-white p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Team Members</p>
-                    {teamDetails.participants.map((member) => (
-                      <div key={member.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                        <p className="text-sm font-semibold text-foreground">
-                          {member.name}
-                          {teamDetails.leader_id === member.id ? ' | Leader' : ''}
-                        </p>
-                        <p className="mt-1 text-xs text-secondary">{member.email}</p>
-                        <p className="mt-1 text-xs text-secondary">
-                          {member.department || 'N/A'} {member.year ? `| ${member.year}` : ''}
-                        </p>
-                      </div>
-                    ))}
+            
+            <div className="flex-1 p-6 sm:p-8 flex flex-col items-center justify-center bg-slate-100">
+              <div 
+                id="ticket-card" 
+                className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+              >
+                <div className="px-6 py-6 text-center" style={{ background: '#1e293b', color: '#ffffff' }}>
+                  <span 
+                    className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-sm"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                  >
+                    {isTeam ? 'Team Pass' : 'Entry Pass'}
+                  </span>
+                  <h3 className="mt-4 truncate text-xl font-black">{event.name}</h3>
+                  <p className="mt-1 text-sm font-medium" style={{ color: '#cbd5e1' }}>
+                    {format(new Date(event.date), 'MMM d, yyyy')} • {event.time}
+                  </p>
+                </div>
+
+                <div className="flex flex-col items-center px-6 py-8">
+                  <div className="rounded-xl border p-3 shadow-sm" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify({ participantId: currentRegistration.id, eventId: event.id }))}`}
+                      alt="Student Ticket QR"
+                      className="h-40 w-40 object-contain mix-blend-multiply"
+                    />
                   </div>
-                ) : null}
+                  <p className="mt-5 font-mono text-xs tracking-[0.2em]" style={{ color: '#64748b' }}>
+                    {currentRegistration.id.slice(0, 16).toUpperCase()}
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div className="surface-panel-muted p-5">
-                <p className="text-sm font-bold text-foreground">Registration Confirmed</p>
-                <p className="mt-2 text-sm leading-6 text-secondary">
-                  Your registration is already active for this event.
-                </p>
-              </div>
-            )}
-          </div>
-        ) : registrationSuccess && !isTeam ? (
-          <div className="p-6 sm:p-7">
-            <div className="status-success">
-              Registration completed successfully. Please check your email for confirmation.
+            </div>
+
+            <div className="border-t border-border bg-white p-5 space-y-3">
+              <button onClick={handleDownloadTicket} disabled={isDownloading} className="btn-professional w-full justify-center">
+                {isDownloading ? 'Downloading...' : 'Download Ticket Image'}
+              </button>
+              {isTeam && currentRegistration?.team && (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground text-center mb-2">Team Details</p>
+                  <p className="text-center font-bold text-foreground">{currentRegistration.team.name}</p>
+                  <p className="text-center text-sm text-secondary">Code: {currentRegistration.team.code}</p>
+                </div>
+              )}
             </div>
           </div>
-        ) : isTeam ? (
-          <>
-            <div className="grid grid-cols-2 border-b border-border bg-slate-50 p-1.5">
-              <button
-                type="button"
-                onClick={() => setTeamAction('create')}
-                disabled={hasExistingRegistration}
-                className={`rounded-xl px-4 py-3 text-sm font-bold transition-all ${teamAction === 'create' ? 'bg-white text-foreground shadow-sm' : 'text-secondary'}`}
-              >
-                Create Team
-              </button>
-              <button
-                type="button"
-                onClick={() => setTeamAction('join')}
-                disabled={hasExistingRegistration}
-                className={`rounded-xl px-4 py-3 text-sm font-bold transition-all ${teamAction === 'join' ? 'bg-white text-foreground shadow-sm' : 'text-secondary'}`}
-              >
-                Join Team
-              </button>
-            </div>
-            {teamAction === 'create' ? (
-              <CreateTeamForm
-                eventId={event.id}
-                onSuccess={async (result) => {
-                  const teamRes = await api.get(`/teams/${result.id}`);
-                  setCurrentRegistration({
-                    id: result.leader?.id,
-                    event_id: event.id,
-                    team: {
-                      id: result.id,
-                      name: result.name,
-                      code: result.code,
-                      leader_id: result.leader?.id,
-                    },
-                  });
-                  setTeamDetails(teamRes.data);
-                }}
-              />
-            ) : (
-              <JoinTeamForm
-                onSuccess={async (result) => {
-                  const teamRes = await api.get(`/teams/${result.team.id}`);
-                  setCurrentRegistration({
-                    id: result.member?.id,
-                    event_id: event.id,
-                    team: result.team,
-                  });
-                  setTeamDetails(teamRes.data);
-                }}
-              />
-            )}
-          </>
         ) : (
-          <RegisterForm eventId={event.id} onSuccess={() => setRegistrationSuccess(true)} />
+          <RegisterForm eventId={event.id} onSuccess={(participant) => {
+            setCurrentRegistration(participant);
+            setRegistrationSuccess(true);
+          }} />
         )}
       </aside>
     </div>

@@ -35,8 +35,8 @@ export default function RegisterForm({ eventId, onSuccess }) {
     setError('');
 
     try {
-      await api.post('/participants/register', { ...formData, eventId });
-      onSuccess();
+      const res = await api.post('/participants/register', { ...formData, eventId });
+      onSuccess(res.data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to register. Please check your details.');
     } finally {

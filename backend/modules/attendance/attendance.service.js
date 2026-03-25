@@ -10,12 +10,18 @@ const attendanceService = {
   },
 
   async markAttendance(participantId, eventId, status = 'PRESENT') {
-    return attendanceModel.upsert({
+    const record = await attendanceModel.upsert({
       participant_id: participantId,
       event_id: eventId,
       status,
       marked_at: new Date().toISOString()
     });
+    
+    // Also fetch participant details so the admin scanner can show who was marked
+    const participantModelObj = require('../participant/participant.model');
+    const participant = await participantModelObj.findById(participantId);
+    
+    return { attendance: record, participant };
   },
 
   async bulkMarkAttendance(eventId, attendanceList) {

@@ -14,6 +14,7 @@ export default function AdminAttendance() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
 
   useEffect(() => {
     fetchEvents();
@@ -231,6 +232,26 @@ export default function AdminAttendance() {
             <SummaryCard label="Attendance Rate" value={`${stats.attendanceRate}%`} />
           </div>
 
+          {!loading && participants.length > 0 && (
+            <div className="flex border-t border-gray-100 bg-gray-50/50 px-6 py-3">
+              <div className="flex rounded-lg bg-gray-200/50 p-1">
+                {['ALL', 'PRESENT', 'ABSENT'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-all ${
+                      filterStatus === status 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {status === 'ALL' ? 'All Registrations' : status === 'PRESENT' ? 'Attended (Scanned)' : 'Not Attended'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center px-6 pb-8 pt-2">
               <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-gray-900" />
@@ -249,23 +270,42 @@ export default function AdminAttendance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 bg-white">
-                  {participants.length === 0 ? (
-                    <tr>
-                      <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
-                        <div className="flex flex-col items-center justify-center">
-                          <svg className="mb-4 h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                          <p className="text-sm">
-                            {isTeamEvent
-                              ? 'No teams or members are registered for this event.'
-                              : 'No participants registered for this event.'}
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    participants.map((participant) => {
+                  {(() => {
+                    if (participants.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                            <div className="flex flex-col items-center justify-center">
+                              <svg className="mb-4 h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              <p className="text-sm">
+                                {isTeamEvent
+                                  ? 'No teams or members are registered for this event.'
+                                  : 'No participants registered for this event.'}
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                    const filteredParticipants = participants.filter(p => {
+                      if (filterStatus === 'ALL') return true;
+                      const status = attendanceRecords[p.id] || 'ABSENT';
+                      return status === filterStatus;
+                    });
+
+                    if (filteredParticipants.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-12 text-center text-gray-500">
+                            <p className="text-sm">No participants match the selected filter.</p>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return filteredParticipants.map((participant) => {
                       const status = attendanceRecords[participant.id] || 'ABSENT';
                       const isPresent = status === 'PRESENT';
 
@@ -311,8 +351,8 @@ export default function AdminAttendance() {
                           </td>
                         </tr>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>

@@ -100,7 +100,18 @@ export default function EventParticipantsAndTeams() {
           <button onClick={() => router.back()} className="mb-2 flex items-center text-sm text-gray-500 hover:text-gray-900">
             &larr; Back to Events
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
+          <div className="flex flex-wrap items-center gap-4">
+            <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
+            <button
+               onClick={() => router.push(`/admin/events/${eventId}/scan`)}
+               className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 shadow-sm flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              Scan QR Attendance
+            </button>
+          </div>
           <p className="mt-2 text-gray-600">
             {isTeam ? 'Registered teams and members' : 'Registered participants'}
           </p>

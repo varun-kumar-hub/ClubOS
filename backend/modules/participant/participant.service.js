@@ -2,7 +2,7 @@ const participantModel = require('./participant.model');
 const eventModel = require('../event/event.model');
 const { paginate, paginationMeta } = require('../../utils/pagination');
 const { validateEmail, validatePhone, validateRequired } = require('../../utils/validators');
-const { sendRegistrationConfirmation } = require('../../services/email.service');
+const { sendRegistrationConfirmation, sendRegistrationRejected } = require('../../services/email.service');
 
 const participantService = {
   async getParticipantsByEvent(eventId, { page = 1, limit = 20, search, department, year }) {
@@ -55,6 +55,10 @@ const participantService = {
     if (event.event_type === 'INDIVIDUAL' && event.max_participants) {
       const count = await participantModel.countByEventId(eventId);
       if (count >= event.max_participants) {
+        // Send rejection email (non-blocking)
+        sendRegistrationRejected({ name, email }, event, 'Event has reached maximum capacity').catch(err => 
+          console.error('Rejection email send failed:', err.message)
+        );
         throw Object.assign(new Error('Event has reached maximum participants'), { statusCode: 400 });
       }
     }
