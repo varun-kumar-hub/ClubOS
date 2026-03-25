@@ -37,6 +37,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // ─── Health Check ────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.send('Club OS Backend is running! Access the API at /api/...');
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
