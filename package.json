@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"nodemon api/server.js\"",
+    "dev": "concurrently -n \"next,api\" -c \"cyan.bold,green.bold\" \"next dev\" \"nodemon\"",
     "build": "next build",
     "start": "next start"
   },
